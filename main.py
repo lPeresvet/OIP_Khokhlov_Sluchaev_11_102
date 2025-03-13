@@ -1,4 +1,5 @@
 import requests
+import threading
 
 outDir = "./out/"
 indexMap = dict()
@@ -30,6 +31,8 @@ def writeIndexToFile():
     indexFile.close()
     print("Индексы записаны...")
 
+threads = []
+
 try:
     file = open(filename, 'r', encoding='utf-8')
 
@@ -37,11 +40,17 @@ try:
     i = 1
     while line:
         print("Читаю: " + line.strip())
-        loadPage(line.strip(), i)
         indexMap[i] = line.strip()
+
+        thread = threading.Thread(target=loadPage, args=(line.strip(),i,))
+        threads.append(thread)
+        thread.start()
 
         line = file.readline()
         i += 1
+
+    for thread in threads:
+        thread.join()
 
     writeIndexToFile()
 
