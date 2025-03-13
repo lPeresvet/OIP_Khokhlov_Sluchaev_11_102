@@ -3,6 +3,8 @@ import threading
 
 outDir = "./out/"
 indexMap = dict()
+filename = "./input_sites_list.txt"
+threads = []
 
 def writeToFile(body, number):
     try:
@@ -11,7 +13,6 @@ def writeToFile(body, number):
 
     except Exception as e:
         print(f"Произошла ошибка: {e}")
-    # print(body)
 
 def loadPage(url, number):
     resp = requests.get(url)
@@ -19,7 +20,6 @@ def loadPage(url, number):
     print("Status Code:", resp.status_code)
     writeToFile(resp.text, number)
 
-filename = "./input_sites_list.txt"
 
 def writeIndexToFile():
     print("Записываю индексы...")
@@ -30,8 +30,6 @@ def writeIndexToFile():
 
     indexFile.close()
     print("Индексы записаны...")
-
-threads = []
 
 try:
     file = open(filename, 'r', encoding='utf-8')
