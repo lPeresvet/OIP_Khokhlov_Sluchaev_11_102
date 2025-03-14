@@ -1,10 +1,19 @@
 import requests
 import threading
+import subprocess
 
 outDir = "./out/"
 indexMap = dict()
 filename = "./input_sites_list.txt"
 threads = []
+cleanup_script_path = "./cleanup.sh"
+
+try:
+    result = subprocess.run([cleanup_script_path], capture_output=True, text=True, check=True)
+    print("Стандартный вывод:", result.stdout)
+
+except subprocess.CalledProcessError as e:
+    print("Очистка заввершилась с ошибкой:", e)
 
 def writeToFile(body, number):
     try:
@@ -15,9 +24,11 @@ def writeToFile(body, number):
         print(f"Произошла ошибка: {e}")
 
 def loadPage(url, number):
+    print("Читаю: " + url)
+
     resp = requests.get(url)
 
-    print("Status Code:", resp.status_code)
+    print(url, " response code:", resp.status_code)
     writeToFile(resp.text, number)
 
 
@@ -29,7 +40,7 @@ def writeIndexToFile():
         indexFile.write(indexEntry)
 
     indexFile.close()
-    print("Индексы записаны...")
+    print("Индексы записаны")
 
 try:
     file = open(filename, 'r', encoding='utf-8')
@@ -37,7 +48,6 @@ try:
     line = file.readline()
     i = 1
     while line:
-        print("Читаю: " + line.strip())
         indexMap[i] = line.strip()
 
         thread = threading.Thread(target=loadPage, args=(line.strip(),i,))
