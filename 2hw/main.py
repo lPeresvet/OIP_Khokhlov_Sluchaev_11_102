@@ -46,8 +46,19 @@ def proceed_file(file):
 
     lemma_groups = {}
 
-    for token in tokens:
-        lemma = lemmatizer.lemmatize(token)
+    for token, tag in tagged_tokens:
+        if tag.startswith('J'):
+            pos = 'a'
+        elif tag.startswith('V'):
+            pos = 'v'
+        elif tag.startswith('N'):
+            pos = 'n'
+        elif tag.startswith('R'):
+            pos = 'r'
+        else:
+            pos = 'n'
+
+        lemma = lemmatizer.lemmatize(token, pos=pos)
         if lemma in lemma_groups:
             lemma_groups[lemma].append(token)
         else:
