@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-DIRECTORY="./out"
+DIRECTORY="../out"
 
 # Проверяем, существует ли директория.
 if [ ! -d "$DIRECTORY" ]; then
