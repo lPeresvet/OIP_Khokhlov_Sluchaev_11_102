@@ -3,13 +3,14 @@ import os
 from collections import Counter
 
 import pymorphy3
-from bs4 import BeautifulSoup
 from nltk import wordpunct_tokenize
+
+from hw_2.page_payload_extractor import extract_page
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 raw_files_dir = os.path.join(PROJECT_ROOT, "out")
 TOKENS_PATH = os.path.join(PROJECT_ROOT, "out", "tokens")
-res_path = os.path.join(PROJECT_ROOT, "hw4", "out")
+res_path = os.path.join(PROJECT_ROOT, "hw_4", "out")
 morph = pymorphy3.MorphAnalyzer()
 
 
@@ -72,9 +73,8 @@ class TfIdfCalculator:
             self.file_names.append(base_name)
             print(fname)
 
-            with open(path, encoding='utf-8') as f:
-                text = BeautifulSoup(f, features='lxml').get_text().lower()
-                tokens = wordpunct_tokenize(text)
+            extracted_text = extract_page(path).lower()
+            tokens = wordpunct_tokenize(extracted_text)
 
             allowed_words = {word for group in self.tokens[base_name] for word in group}
             data = [w for w in tokens if w in allowed_words]
@@ -93,7 +93,6 @@ class TfIdfCalculator:
             tf_for_doc = {}
 
             for group_list in word_groups.get(file_id, []):
-                # words = [w.strip() for w in group_str.split(',') if w.strip()]
                 group_key = ' '.join(group_list)
                 count = sum(counter.get(w, 0) for w in group_list)
                 tf_for_doc[group_key] = count / total if total > 0 else 0.0
