@@ -10,7 +10,7 @@ pages_num = 155
 outDir = "../out"
 
 try:
-    result = subprocess.run(["./cleanup_hw_2.sh"], capture_output=True, text=True, check=True)
+    result = subprocess.run(["./cleanup_hw2.sh"], capture_output=True, text=True, check=True)
     print("Стандартный вывод:", result.stdout)
 
 except subprocess.CalledProcessError as e:
