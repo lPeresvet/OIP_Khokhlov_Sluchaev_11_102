@@ -71,7 +71,6 @@ class TfIdfCalculator:
             base_name, text = os.path.splitext(fname)
             path = os.path.join(raw_files_dir, fname)
             self.file_names.append(base_name)
-            print(fname)
 
             extracted_text = extract_page(path).lower()
             tokens = wordpunct_tokenize(extracted_text)
@@ -113,10 +112,12 @@ class TfIdfCalculator:
                 words = group
                 group_key = ' '.join(words)
 
-                df = sum(
-                    1 for counter in self.counters.values()
-                    if any(counter.get(w, 0) > 0 for w in words)
-                )
+                df = 0
+                for cnt in self.counters.values():
+                    for w in words:
+                        if cnt.get(w, 0) > 0:
+                            df += 1
+                            break
 
                 idf_value = math.log10(total_docs / df) if df > 0 else 0.0
                 idf_result[file_id][group_key] = idf_value
@@ -149,7 +150,8 @@ class TfIdfCalculator:
         os.makedirs(out_dir, exist_ok=True)
 
         for file_id, tf_idf_doc in tfidf.items():
-            out_path = os.path.join(out_dir, f"{file_id}_tf_idf.txt")
+            file_name_key = "lemmas" if use_lemmas else "tokens"
+            out_path = os.path.join(out_dir, f"{file_id}_{file_name_key}_tf_idf.txt")
 
             with open(out_path, 'w', encoding='utf-8') as f:
                 for group in word_groups.get(file_id, []):
