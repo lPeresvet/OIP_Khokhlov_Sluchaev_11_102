@@ -150,8 +150,7 @@ class TfIdfCalculator:
         os.makedirs(out_dir, exist_ok=True)
 
         for file_id, tf_idf_doc in tfidf.items():
-            file_name_key = "lemmas" if use_lemmas else "tokens"
-            out_path = os.path.join(out_dir, f"{file_id}_{file_name_key}_tf_idf.txt")
+            out_path = os.path.join(out_dir, f"{file_id}_{subdir}_tf_idf.txt")
 
             with open(out_path, 'w', encoding='utf-8') as f:
                 for group in word_groups.get(file_id, []):
