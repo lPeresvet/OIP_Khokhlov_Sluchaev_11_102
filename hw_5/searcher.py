@@ -1,6 +1,5 @@
-import math
 import os
-import json
+import math
 from collections import defaultdict
 from typing import Dict, List, Tuple
 import pymorphy2
@@ -8,95 +7,98 @@ from nltk.tokenize import word_tokenize
 
 
 class VectorSearch:
-    def __init__(self, tfidf_dir: str, inverted_index_path: str):
+    def __init__(self, tfidf_dir: str):
         """
-        :param tfidf_dir: Папка с файлами TF-IDF (каждый файл - один документ)
-        :param inverted_index_path: Путь к файлу инвертированного индекса
+        :param tfidf_dir: Папка с файлами TF-IDF в формате "термин tf idf"
         """
         self.morph = pymorphy2.MorphAnalyzer()
         self.tfidf_dir = tfidf_dir
-        self.inverted_index_path = inverted_index_path
 
-        self.inverted_index = self.load_inverted_index()
-        self.doc_tfidf = self.load_all_tfidf()
-        self.doc_lengths = self.calculate_doc_lengths()
+        # Структуры данных
+        self.doc_vectors: Dict[str, Dict[str, float]] = {}  # {doc_id: {term: tfidf}}
+        self.term_idf: Dict[str, float] = {}  # {term: idf}
+        self.doc_lengths: Dict[str, float] = {}  # {doc_id: vector_length}
 
-    def load_inverted_index(self) -> Dict[str, List[str]]:
-        with open(self.inverted_index_path, 'r', encoding='utf-8') as f:
-            try:
-                return json.load(f)
-            except json.JSONDecodeError:
-                return {}
+        self._load_tfidf_files()
+        self._compute_doc_lengths()
 
-    def load_all_tfidf(self) -> Dict[str, Dict[str, float]]:
-        doc_tfidf = {}
+    def _load_tfidf_files(self):
+        """Загрузка TF-IDF из файлов в указанном формате"""
         for filename in os.listdir(self.tfidf_dir):
-            if filename.endswith('.txt'):
-                doc_id = filename.split('_')[0]
-                doc_tfidf[doc_id] = self.load_doc_tfidf(filename)
-        return doc_tfidf
+            if not filename.endswith('.txt'):
+                continue
 
-    def load_doc_tfidf(self, filename: str) -> Dict[str, float]:
-        tfidf = {}
-        with open(os.path.join(self.tfidf_dir, filename), 'r', encoding='utf-8') as f:
-            for line in f:
-                parts = line.strip().split()
-                if len(parts) >= 3:
-                    term = parts[0]
-                    tfidf_score = float(parts[2])
-                    tfidf[term] = tfidf_score
-        return tfidf
+            doc_id = filename.split('_')[0]+".html"
+            self.doc_vectors[doc_id] = {}
 
-    def calculate_doc_lengths(self) -> Dict[str, float]:
-        lengths = {}
-        for doc_id, tfidf_scores in self.doc_tfidf.items():
-            length = math.sqrt(sum(score ** 2 for score in tfidf_scores.values()))
-            lengths[doc_id] = length
-        return lengths
+            with open(os.path.join(self.tfidf_dir, filename), 'r', encoding='utf-8') as f:
+                for line in f:
+                    parts = line.strip().split()
+                    if len(parts) >= 3:
+                        term = parts[0]
+                        tf = float(parts[1])
+                        idf = float(parts[2])
+                        tfidf = tf * idf
+
+                        self.doc_vectors[doc_id][term] = tfidf
+                        # Сохраняем IDF (будет перезаписываться, но значение одинаковое для всех документов)
+                        self.term_idf[term] = idf
+
+    def _compute_doc_lengths(self):
+        """Вычисление длин векторов документов"""
+        for doc_id, terms in self.doc_vectors.items():
+            self.doc_lengths[doc_id] = math.sqrt(
+                sum(tfidf ** 2 for tfidf in terms.values())
+            )
 
     def preprocess_query(self, query: str) -> List[str]:
+        """Нормализация запроса"""
         tokens = word_tokenize(query.lower())
-        lemmas = []
-        for token in tokens:
-            if token.isalpha():  # Игнорируем числа и пунктуацию
-                lemma = self.morph.parse(token)[0].normal_form
-                lemmas.append(lemma)
-        return lemmas
+        return [
+            self.morph.parse(token)[0].normal_form
+            for token in tokens
+            if token.isalpha()
+        ]
 
     def search(self, query: str, top_n: int = 10) -> List[Tuple[str, float]]:
+        """Поиск с косинусной мерой"""
         query_terms = self.preprocess_query(query)
         if not query_terms:
             return []
 
-        relevant_docs = set()
+        # Векторизация запроса
+        query_tf = defaultdict(float)
         for term in query_terms:
-            if term in self.inverted_index:
-                relevant_docs.update(self.inverted_index[term])
+            query_tf[term] += 1
+        query_len = len(query_terms)
 
+        query_vector = {
+            term: (tf / query_len) * self.term_idf.get(term, 0)
+            for term, tf in query_tf.items()
+        }
+        query_norm = math.sqrt(sum(v ** 2 for v in query_vector.values()))
+
+        # Поиск по документам
         scores = []
-        for doc_id in relevant_docs:
-            if doc_id not in self.doc_tfidf:
-                continue
+        for doc_id, doc_vector in self.doc_vectors.items():
+            dot_product = sum(
+                query_vector.get(term, 0) * doc_vector.get(term, 0)
+                for term in query_vector
+            )
 
-            score = 0.0
-            for term in query_terms:
-                score += self.doc_tfidf[doc_id].get(term, 0.0)
+            doc_norm = self.doc_lengths[doc_id]
+            if query_norm > 0 and doc_norm > 0:
+                cosine = dot_product / (query_norm * doc_norm)
+                scores.append((doc_id, cosine))
 
-            if self.doc_lengths[doc_id] > 0:
-                score /= self.doc_lengths[doc_id]
-
-            scores.append((doc_id, score))
-
-        scores.sort(key=lambda x: x[1], reverse=True)
-        return scores[:top_n]
+        return sorted(scores, key=lambda x: x[1], reverse=True)[:top_n]
 
 
 # Пример использования
 if __name__ == "__main__":
     TFIDF_DIR = "../hw_4/out/lemmas"
-    INVERTED_INDEX_PATH = "../out/inverted_index.json"
 
-    searcher = VectorSearch(TFIDF_DIR, INVERTED_INDEX_PATH)
+    searcher = VectorSearch(TFIDF_DIR)
 
     while True:
         query = input("Введите поисковый запрос (или '!exit' для выхода): ")
