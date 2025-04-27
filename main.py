@@ -17,7 +17,7 @@ except subprocess.CalledProcessError as e:
 
 def writeToFile(body, number):
     try:
-        with open(outDir+str(number), 'w', encoding='utf-8') as file:
+        with open(outDir+str(number)+".html", 'w', encoding='utf-8') as file:
             file.write(body)
 
     except Exception as e:
