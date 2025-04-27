@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Поиск</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 40px;
+            font-size: 48px;
+            color: #333;
+        }
+
+        form {
+            margin-top: 20px;
+        }
+
+        input[type="text"] {
+            width: 400px;
+            height: 40px;
+            font-size: 18px;
+            padding: 5px 10px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            margin-right: 10px;
+        }
+
+        button {
+            height: 44px;
+            font-size: 18px;
+            padding: 0 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        h2 {
+            margin-top: 50px;
+            font-size: 36px;
+            color: #555;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+
+        li {
+            background-color: #ffffff;
+            margin: 10px auto;
+            padding: 15px 20px;
+            width: 500px;
+            font-size: 18px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            text-align: left;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        li:hover {
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body>
+
+    <form method="get" action="/search">
+        <input type="text" name="query" placeholder="Введите запрос" value="{{ query }}">
+        <button type="submit">Искать</button>
+    </form>
+
+    {% if results %}
+        <h2>Результаты поиска:</h2>
+        <ul>
+            {% for item in results %}
+                <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</body>
+</html>
