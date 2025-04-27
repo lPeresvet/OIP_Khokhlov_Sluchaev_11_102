@@ -2,16 +2,18 @@ import os
 import math
 from collections import defaultdict
 from typing import Dict, List, Tuple
-import pymorphy2
+import pymorphy3
 from nltk.tokenize import word_tokenize
+
+from hw_4.tf_idf_calculation import PROJECT_ROOT
 
 
 class VectorSearch:
-    def __init__(self, tfidf_dir: str):
+    def __init__(self, tfidf_dir: str=os.path.join(PROJECT_ROOT, "hw_4", "out", "lemmas")):
         """
         :param tfidf_dir: Папка с файлами TF-IDF в формате "термин tf idf"
         """
-        self.morph = pymorphy2.MorphAnalyzer()
+        self.morph = pymorphy3.MorphAnalyzer()
         self.tfidf_dir = tfidf_dir
 
         # Структуры данных
