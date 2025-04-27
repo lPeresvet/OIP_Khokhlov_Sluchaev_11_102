@@ -88,7 +88,8 @@
         <h2>Результаты поиска:</h2>
         <ul>
             {% for item in results %}
-                <li>{{ item }}</li>
+                <li data-url="{{ item[0] }}" onclick="location.href='/pages/{{ item[0] }}'" style="cursor: pointer;">{{ item }}
+                </li>
             {% endfor %}
         </ul>
     {% endif %}
